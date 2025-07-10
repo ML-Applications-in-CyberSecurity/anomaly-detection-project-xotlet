@@ -22,3 +22,22 @@ Destination port 10631 is not a well-known port and is likely a dynamically assi
 The packet size of 173 bytes and duration of 180 ms are not particularly unusual, but they could be indicative of a slow and steady data transfer, which is often seen in C2 communication or data exfiltration.
 
 Further investigation is necessary to determine the root cause of this anomaly and to take appropriate action to mitigate any potential security risks."
+1337,61723,1349,78,TCP,-0.015622093865229836,"**Anomaly Label:** Suspicious Backdoor Activity
+
+**Explanation:** The network sensor reading indicates a potential backdoor activity due to the unusual combination of attributes. Here's why:
+
+* **src_port 1337**: This source port is commonly associated with the ""W32.Blaster.Worm"" malware, which is known to exploit vulnerabilities in Windows operating systems. While it's possible that a legitimate application is using this port, it's unusual and warrants further investigation.
+* **dst_port 61723**: This destination port is not a standard port for any well-known service, which suggests that it might be a custom or dynamically assigned port. This could be indicative of a backdoor or Command and Control (C2) communication.
+* **packet_size 1349**: The packet size is relatively large, which might indicate that the communication is transferring data or commands, rather than just performing a simple probe or scan.
+* **duration_ms 78**: The duration of the connection is relatively short, which could suggest that the communication is intended to be brief and stealthy.
+
+Given these attributes, it's possible that a compromised system on the network is communicating with a malicious actor or a C2 server, potentially exfiltrating data or receiving commands. This anomaly should be investigated further to determine the root cause and prevent potential damage."
+443,63334,1474,367,TCP,-0.0075764614841864475,"Based on the network sensor reading, I would label this anomaly as a **Suspicious Outbound Connection**.
+
+The reason for this classification is the unusual destination port number (63334) used in the TCP connection. Typically, well-known services and applications use standardized port numbers below 1024 (e.g., HTTP uses port 80, HTTPS uses port 443). The use of a high, non-standard port number like 63334 may indicate a potential malicious activity, such as:
+
+1. **Data exfiltration**: An attacker might be using a non-standard port to transfer sensitive data from the internal network to a command and control (C2) server or a drop zone.
+2. **Malware communication**: Malware may use unusual port numbers to communicate with its C2 server, evade detection, or receive instructions.
+3. **Unauthorized access**: An unauthorized user or process might be attempting to establish a connection to an unknown or untrusted external entity.
+
+The packet size (1474) and duration (367 ms) are within normal ranges, but the unusual destination port number warrants further investigation to determine the legitimacy of this connection."

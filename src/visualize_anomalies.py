@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+from sklearn.decomposition import PCA
 
 # Path to the anomaly log
 anomaly_log_path = os.path.join(os.path.dirname(__file__), 'anomalies_log.csv')
@@ -53,4 +54,45 @@ plt.legend(title='Legend')
 plt.tight_layout()
 plt.show()
 
-# To create 'normal_log.csv', log normal points from your client or server with the same columns as anomalies_log.csv (except llm_explanation). 
+# --- PCA Visualization ---
+# Combine normal and anomaly data for PCA
+pca_features = ['src_port', 'dst_port', 'packet_size', 'duration_ms']
+
+anomalies['is_anomaly'] = 1
+if has_normal:
+    normal['is_anomaly'] = 0
+    combined = pd.concat([normal, anomalies], ignore_index=True)
+else:
+    combined = anomalies.copy()
+
+# Fill missing values if any
+combined = combined.fillna(0)
+
+# Run PCA
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(combined[pca_features])
+combined['PC1'] = X_pca[:, 0]
+combined['PC2'] = X_pca[:, 1]
+
+plt.figure(figsize=(8, 6))
+if has_normal:
+    sns.scatterplot(
+        data=combined[combined['is_anomaly'] == 0],
+        x='PC1', y='PC2',
+        color='gray', label='Normal', s=40, alpha=0.5
+    )
+sns.scatterplot(
+    data=combined[combined['is_anomaly'] == 1],
+    x='PC1', y='PC2',
+    hue='confidence_score',
+    palette='coolwarm',
+    s=80,
+    legend='brief',
+    label='Anomaly'
+)
+plt.title('PCA Projection: Normal vs Anomaly')
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.legend(title='Legend')
+plt.tight_layout()
+plt.show()
