@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import joblib
 import os
+import csv
 from together import Together
 
 HOST = 'localhost'
@@ -41,9 +42,15 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 
                 X = pre_process_data(data)
                 prediction = model.predict(X)[0]
+                # Get anomaly score (the lower, the more abnormal)
+                confidence_score = model.decision_function(X)[0]
                 if prediction == -1:
                     # Anomaly detected
-                    print("🚨 Anomaly Detected! Sending to LLM for explanation...")
+                    print(f"🚨 Anomaly Detected! (Confidence score: {confidence_score:.4f}) Sending to LLM for explanation...")
+
+                    # Prepare to log anomaly
+                    log_path = os.path.join(os.path.dirname(__file__), 'anomalies_log.csv')
+                    log_headers = ['src_port', 'dst_port', 'packet_size', 'duration_ms', 'protocol', 'confidence_score', 'llm_explanation']
 
                     TOGETHER_API_KEY = os.environ.get("TOGETHER_API_KEY", "")
                     if TOGETHER_API_KEY == "":
@@ -68,9 +75,43 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     except Exception as e:
                         llm_reply = f"LLM call failed: {e}"
 
-                    print(f"\n🚨 Anomaly Detected!\nData: {data}\nLLM Explanation: {llm_reply}\n")
+                    print(f"\n🚨 Anomaly Detected!\nData: {data}\nConfidence Score: {confidence_score:.4f}\nLLM Explanation: {llm_reply}\n")
+
+                    # Log anomaly to CSV
+                    log_row = [
+                        data.get('src_port'),
+                        data.get('dst_port'),
+                        data.get('packet_size'),
+                        data.get('duration_ms'),
+                        data.get('protocol'),
+                        confidence_score,
+                        llm_reply
+                    ]
+                    file_exists = os.path.isfile(log_path)
+                    with open(log_path, 'a', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        if not file_exists:
+                            writer.writerow(log_headers)
+                        writer.writerow(log_row)
                 else:
                     print("normal")
+                    # Log normal point to normal_log.csv
+                    normal_log_path = os.path.join(os.path.dirname(__file__), 'normal_log.csv')
+                    normal_log_headers = ['src_port', 'dst_port', 'packet_size', 'duration_ms', 'protocol', 'confidence_score']
+                    normal_log_row = [
+                        data.get('src_port'),
+                        data.get('dst_port'),
+                        data.get('packet_size'),
+                        data.get('duration_ms'),
+                        data.get('protocol'),
+                        confidence_score
+                    ]
+                    file_exists = os.path.isfile(normal_log_path)
+                    with open(normal_log_path, 'a', newline='') as csvfile:
+                        writer = csv.writer(csvfile)
+                        if not file_exists:
+                            writer.writerow(normal_log_headers)
+                        writer.writerow(normal_log_row)
 
             except json.JSONDecodeError:
                 print("Error decoding JSON.")
